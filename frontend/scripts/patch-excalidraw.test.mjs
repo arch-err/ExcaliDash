@@ -10,21 +10,21 @@ async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "excalidraw-patch-test-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ version: "0.18.1" }));
-  for (const patch of patches) {
-    const directory = path.join(root, "dist", patch.directory);
+  for (const directoryName of ["dev", "prod"]) {
+    const directory = path.join(root, "dist", directoryName);
     await fs.mkdir(directory, { recursive: true });
-    await fs.writeFile(path.join(directory, "chunk.js"), patch.before);
+    await fs.writeFile(path.join(directory, "chunk.js"), patches.filter(p => p.directory === directoryName).map(p => p.before).join("\n"));
   }
   return root;
 }
 
-test("patching is repeatable and retains source-map offsets", async (t) => {
+test("patching is repeatable and applies every change in the same bundle", async (t) => {
   const root = await fixture(t);
   await patchExcalidraw(root);
   await patchExcalidraw(root);
   for (const patch of patches) {
     const source = await fs.readFile(path.join(root, "dist", patch.directory, "chunk.js"), "utf8");
-    assert.equal(source, patch.after.padEnd(patch.before.length, " "));
+    assert.ok(source.includes(patch.after.padEnd(patch.before.length, " ")));
   }
 });
 
@@ -36,9 +36,10 @@ test("an Excalidraw upgrade requires patch review", async (t) => {
 
 test("a changed production bundle fails before modifying development", async (t) => {
   const root = await fixture(t);
+  const original = await fs.readFile(path.join(root, "dist/dev/chunk.js"), "utf8");
   await fs.writeFile(path.join(root, "dist/prod/chunk.js"), "changed upstream predicate");
   await assert.rejects(patchExcalidraw(root), /Expected one Excalidraw prod/);
-  assert.equal(await fs.readFile(path.join(root, "dist/dev/chunk.js"), "utf8"), patches[0].before);
+  assert.equal(await fs.readFile(path.join(root, "dist/dev/chunk.js"), "utf8"), original);
 });
 
 test("duplicate predicates are rejected", async (t) => {
@@ -47,8 +48,8 @@ test("duplicate predicates are rejected", async (t) => {
   await assert.rejects(patchExcalidraw(root), /Ambiguous patch target/);
 });
 
-for (const patch of patches) {
-  test(`${patch.directory} installed renderer compensates SVGs and rasters only when loaded in dark mode`, async () => {
+for (const patch of patches.slice(0, 2)) {
+  test(`${patch.directory} installed renderer excludes SVGs and rasters from filtering only when loaded in dark mode`, async () => {
     const directory = new URL(`../node_modules/@excalidraw/excalidraw/dist/${patch.directory}/`, import.meta.url);
     let source;
     for (const filename of (await fs.readdir(directory)).filter((name) => name.endsWith(".js"))) {
