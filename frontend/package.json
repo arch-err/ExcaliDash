@@ -8,13 +8,17 @@
     "build": "tsc -b && vite build && node scripts/copy-excalidraw-assets.mjs --dist",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "node --test scripts/*.test.mjs && vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check:max-lines": "node ../scripts/check-source-line-count.cjs"
+    "check:max-lines": "node ../scripts/check-source-line-count.cjs",
+    "patch:excalidraw": "node scripts/patch-excalidraw.mjs",
+    "predev": "npm run patch:excalidraw",
+    "prebuild": "npm run patch:excalidraw",
+    "pretest": "npm run patch:excalidraw"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.1",
+    "@excalidraw/excalidraw": "0.18.1",
     "@types/lodash": "^4.17.20",
     "axios": "^1.16.1",
     "clsx": "^2.1.1",

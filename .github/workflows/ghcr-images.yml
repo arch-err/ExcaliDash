@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       git_ref:
-        description: "Upstream git ref to build: branch, tag, or full commit SHA"
+        description: "Fork git ref to build: branch, tag, or full commit SHA"
         required: true
         default: "main"
       image_tag:
@@ -48,7 +48,7 @@ jobs:
       - name: Checkout selected source
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event_name == 'workflow_dispatch' && 'ZimengXiong/ExcaliDash' || github.repository }}
+          repository: ${{ github.repository }}
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || github.ref }}
           fetch-depth: 0
 
