@@ -55,3 +55,24 @@ test("large dark scenes reuse themed caches without filtering redraws", async ({
   await expect.poll(() => page.evaluate(() => (window as any).renderStats.filteredCacheCopies)).toBeGreaterThan(creation.filteredCacheCopies);
   expect(await page.evaluate(() => (window as any).renderStats.filteredSceneCopies)).toBe(0);
 });
+
+test("mixed shapes and large caches preserve images through pan, zoom and theme changes", async ({ page }) => {
+  await page.goto("/e2e/image-colors.html");
+  await expect.poll(() => page.evaluate(() => (window as any).imageColorFixture?.ready())).toBe(true);
+  await page.evaluate(() => (window as any).imageColorFixture.loadMixed());
+  const assertColors = async (theme: string) => {
+    await expect.poll(() => page.evaluate(() => {
+      const r = (window as any).imageColorFixture.sample();
+      return r && { theme: r.theme, images: JSON.stringify(r.svg) === JSON.stringify(r.reference.pixels) && JSON.stringify(r.png) === JSON.stringify(r.reference.pixels), shape: JSON.stringify(r.shape) === JSON.stringify(r.reference.shape), filter: r.filter };
+    })).toEqual({ theme, images: true, shape: true, filter: "none" });
+  };
+  await assertColors("dark");
+  await page.evaluate(() => (window as any).imageColorFixture.pan(65));
+  await assertColors("dark");
+  await page.evaluate(() => (window as any).imageColorFixture.zoom(1.1));
+  await assertColors("dark");
+  await page.locator("#light").click();
+  await assertColors("light");
+  await page.locator("#dark").click();
+  await assertColors("dark");
+});
