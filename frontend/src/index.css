@@ -44,8 +44,3 @@ html.dark body {
   font-weight: normal;
   font-style: normal;
 }
-
-/* The renderer themes background/shapes; a CSS filter would also alter images. */
-.excalidraw.theme--dark canvas.excalidraw__canvas.static {
-  filter: none;
-}
