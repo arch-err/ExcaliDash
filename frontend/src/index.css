@@ -44,3 +44,8 @@ html.dark body {
   font-weight: normal;
   font-style: normal;
 }
+
+/* Vector caches are themed once; filtering the scene would change image colors. */
+.excalidraw.theme--dark canvas.excalidraw__canvas.static {
+  filter: none;
+}
